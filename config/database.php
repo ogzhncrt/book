@@ -7,7 +7,7 @@ class Database {
     /**
      * @author Oğuzhan Cerit
      * 
-     * This function will provide connection 
+     * This function provides connection 
      * to the provide`and return the database object.
      *
      * @param no-param
