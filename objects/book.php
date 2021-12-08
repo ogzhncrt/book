@@ -74,7 +74,26 @@ class Book {
      *
      */
     public function delete() {
+        $safe_ISBN = $this->safety_pipeline($this->ISBN);
 
+        $query = "UPDATE ".$this->books_table."
+                    SET book_remove_status = '".$GLOBALS["REMOVE_STATUS_TRUE"]."'
+                    WHERE 
+                        book_ISBN = ".$safe_ISBN."
+                    LIMIT 1";
+
+        $statement = $this->conn->prepare($query);
+        
+        if($statement->execute()){
+            /*  
+                Bug : It can be checked whether a book has 
+                actually been deleted or not. There may 
+                not be a book with the sended ISBN.
+            */
+            return TRUE;
+        }
+
+        return FALSE;
     }
 
     /**
