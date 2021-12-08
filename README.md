@@ -4,7 +4,7 @@
 
 * **URL**
 
-  read.php?ISBN={ISBN-NUMBER}
+  book/read.php?ISBN={ISBN-NUMBER}
 
 * **Method:**
 
@@ -59,7 +59,7 @@
 
 * **URL**
 
-  delete.php
+  book/delete.php
 
 * **Method:**
 
@@ -124,7 +124,7 @@
 
 * **URL**
 
-  create.php
+  book/create.php
 
 * **Method:**
 
@@ -208,7 +208,7 @@
 
 * **URL**
 
-  update.php
+  book/update.php
 
 * **Method:**
 
