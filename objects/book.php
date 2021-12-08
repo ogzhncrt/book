@@ -227,6 +227,114 @@ class Book {
      *
      */
     public function update() {
+        $result["status"]        = TRUE;
+        $result["error_message"] = "";
+
+        /* Check book existence first. */
+        $safe_ISBN = $this->safety_pipeline($this->ISBN);
+
+        $query = "SELECT
+                        book_ISBN
+                    FROM ".$this->books_table."
+                    WHERE 
+                        book_ISBN          = ".$safe_ISBN." AND
+                        book_remove_status = '".$GLOBALS["REMOVE_STATUS_FALSE"]."'
+                    LIMIT 1";
+
+        $statement = $this->conn->prepare($query);
+        $statement->execute();
+
+        $book = $statement->fetch(PDO::FETCH_ASSOC);
+        
+        if(!$book) { //Return without update if there is no book.
+            $result["status"]        = FALSE;
+            $result["error_message"] = "There is no book with this ISBN (".$this->ISBN.").";
+        }
+        else { // If there is a book with this ISBN, check the author.
+            $query = "SELECT
+                            author_id,
+                            author_name,
+                            author_surname
+                        FROM ".$this->authors_table."
+                        WHERE 
+                            author_name    = ".$this->safety_pipeline($this->author_name)." AND
+                            author_surname = ".$this->safety_pipeline($this->author_surname)."
+                        LIMIT 1";
+
+            $statement = $this->conn->prepare($query);
+            $statement->execute();
+
+            $author = $statement->fetch(PDO::FETCH_ASSOC);
+
+            if($author) { // if there is a author with the same name and surname
+                $query = "UPDATE ".$this->books_table."
+                            SET book_title     = ".$this->safety_pipeline($this->title).",
+                                book_image     = ".$this->safety_pipeline($this->image).",
+                                book_author_id = '".$author["author_id"]."',
+                                book_updated   = NOW()
+                            WHERE
+                                book_ISBN = ".$this->safety_pipeline($this->ISBN)."
+                            LIMIT 1";
+
+                $statement = $this->conn->prepare($query);
+                
+                if($statement->execute()) {
+                    $result["status"]        = TRUE;
+                    $result["error_message"] = "The book has been updated (ISBN - ".$this->ISBN.") with existing author(".$author['author_name']." ".$author['author_surname'].").";
+                }
+                else{
+                    /* 
+                        Bug : Needs to be handle 
+                    */
+                    $result["status"]        = FALSE;
+                    $result["error_message"] = "Unexpected error occured.-1";
+                }
+
+            }
+            else {
+                $query = "INSERT INTO ".$this->authors_table."
+                            SET author_name    = ".$this->safety_pipeline($this->author_name).",
+                                author_surname = ".$this->safety_pipeline($this->author_surname);
+
+                $statement = $this->conn->prepare($query);
+                
+                if($statement->execute()){
+                    $author_id = $this->conn->lastInsertId(); //fetch last inserted id
+
+                    $query = "UPDATE ".$this->books_table."
+                                SET book_title     = ".$this->safety_pipeline($this->title).",
+                                    book_image     = ".$this->safety_pipeline($this->image).",
+                                    book_author_id = '".$author_id."',
+                                    book_updated   = NOW()
+                                WHERE
+                                    book_ISBN = ".$this->safety_pipeline($this->ISBN)."
+                                LIMIT 1";
+
+                    $statement = $this->conn->prepare($query);
+                    
+                    if($statement->execute()) {
+                        $result["status"]        = TRUE;
+                        $result["error_message"] = "The book has been updated (ISBN - ".$this->ISBN.") with new author(".$this->author_name." ".$this->author_surname.").";
+                    }
+                    else{
+                        /* 
+                            Bug : Needs to be handle 
+                        */
+                        $result["status"]        = FALSE;
+                        $result["error_message"] = "Unexpected error occured.-2";
+                    }
+                }
+                else{
+                    /* 
+                        Bug : Needs to be handle 
+                    */
+                    $result["status"]        = FALSE;
+                    $result["error_message"] = "Unexpected error occured.";
+                }
+            }
+        }
+
+        return $result;
     }
 
     /**
