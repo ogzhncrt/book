@@ -434,3 +434,6 @@ class Book {
     private $conn;
     private $books_table   = "books";
     private $authors_table = "authors";
+}
+
+?>
